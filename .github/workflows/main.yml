@@ -7,7 +7,6 @@ jobs:
         version: [2.4, 2.9]
         cpu: ["amd64", "arm64"]
     runs-on: ubuntu-latest
-    if: "startsWith(github.event.head_commit.message, 'Build') || startsWith(github.event.head_commit.message, 'Release')"
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -23,10 +22,9 @@ jobs:
       - name: build
         run: |
           make USE_PROMETHEUS=1 MAINVERSION=${{ matrix.version }} CPU=${{ matrix.cpu }} run-docker
-      - uses: marvinpinto/action-automatic-releases@latest
+      - name: Create Github Release
+        uses: ncipollo/release-action@v1
         with:
-          title: "WiP RPM Build"
-          automatic_release_tag: "WiP"
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          files: |
-            RPMS/**/*.rpm
+          artifacts: "RPMS/**/haproxy-2*.rpm"
+          replacesArtifacts: false
+          allowUpdates: true
