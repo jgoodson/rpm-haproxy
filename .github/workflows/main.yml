@@ -2,14 +2,27 @@ name: Build RPMs
 on: [push]
 jobs:
   build:
+    strategy:
+      matrix:
+        version: [2.4, 2.9]
+        cpu: ["amd64", "arm64"]
     runs-on: ubuntu-latest
     if: "startsWith(github.event.head_commit.message, 'Build') || startsWith(github.event.head_commit.message, 'Release')"
     steps:
       - name: checkout
         uses: actions/checkout@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: build
         run: |
-          make run-docker
+          make USE_PROMETHEUS=1 MAINVERSION=${{ matrix.version }} CPU=${{ matrix.cpu }} run-docker
       - uses: marvinpinto/action-automatic-releases@latest
         with:
           title: "WiP RPM Build"
